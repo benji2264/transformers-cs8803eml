@@ -285,10 +285,3 @@ class QLinear(nn.Linear):
         output = quantize_grad(output, num_bits=self.num_grad_bits, flatten_dims=(-1,))
 
         return output
-
-
-if __name__ == '__main__':
-    x = torch.rand(2, 3)
-    x_q = quantize(x, flatten_dims=(-1), num_bits=8, dequantize=True)
-    print(x)
-    print(x_q)
