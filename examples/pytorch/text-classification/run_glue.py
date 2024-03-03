@@ -663,8 +663,10 @@ def main():
         
         # Replace original linear layer with quantized version
         setattr(model, name, quantized_linear)
+        print(name, type(module))
 
     # Evaluation
+    # print(from)
     trainer = Trainer( # reset trainer with new model
         model=model,
         args=training_args,
