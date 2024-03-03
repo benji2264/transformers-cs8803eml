@@ -602,7 +602,7 @@ def main():
         trainer.save_metrics("train", metrics)
         trainer.save_state()
 
-    def do_eval(eval_dataset):
+    def do_eval(eval_dataset, trainer):
         # Loop to handle MNLI double evaluation (matched, mis-matched)
         tasks = [data_args.task_name]
         eval_datasets = [eval_dataset]
@@ -634,7 +634,7 @@ def main():
     # Evaluation
     if training_args.do_eval:
         logger.info("*** Evaluate ***")
-        do_eval(eval_dataset)
+        do_eval(eval_dataset,  trainer)
 
     # Post-training quantization
     print(f"Quantize model to {n_bits} bits...")
@@ -676,7 +676,7 @@ def main():
     )
     if training_args.do_eval:
         logger.info(f"*** {n_bits} bits post-training quantization eval ***")
-        do_eval(eval_dataset)
+        do_eval(eval_dataset, trainer)
 
     if training_args.do_predict:
         logger.info("*** Predict ***")
