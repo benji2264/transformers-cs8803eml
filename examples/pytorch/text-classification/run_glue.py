@@ -411,17 +411,22 @@ def main():
         ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
     )
 
-    print("Printing the model...")
-    import torch.nn as nn
-    for name, module in model.named_modules():
-        # print(name, type(module))
-        print(name, isinstance(module, nn.Linear))
-        # print(model)
-
+    print("Freezing the backbone")
     for name, param in model.named_parameters():
-        # print(name, type(module))
-        print(name, param)
-        # print(model)
+        if name.startswith("roberta"):
+            param.requires_grad = False
+
+    # print("Printing the model...")
+    # import torch.nn as nn
+    # for name, module in model.named_modules():
+    #     # print(name, type(module))
+    #     print(name, isinstance(module, nn.Linear))
+    #     # print(model)
+
+    # for name, param in model.named_parameters():
+    #     # print(name, type(module))
+    #     print(name, param)
+    #     # print(model)
 
     # Preprocessing the raw_datasets
     if data_args.task_name is not None:
