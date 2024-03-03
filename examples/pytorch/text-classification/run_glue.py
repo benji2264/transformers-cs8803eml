@@ -226,7 +226,22 @@ def main():
     # See all possible arguments in src/transformers/training_args.py
     # or by passing the --help flag to this script.
     # We now keep distinct sets of args, for a cleaner separation of concerns.
-    print("**************\n* MY ARGS *\n**************")
+
+    # Find "--num_bits" value if exists
+    n_bits = None
+    for i, s in enumerate(sys.argv):
+        if s == "--num_bits":
+            # Store the index of the next element
+            n_bits = sys.argv[i+1]
+            # Remove "--num_bits" and the next element from the list
+            del sys.argv[i:i+2]
+            break
+    
+    if n_bits:
+        print(f"Post training quantization set to {n_bits} bits")
+    else:
+        print("No quantization will be applied, please use `--num_bits <value>` to apply post-training quantization")
+    
     print(sys.argv)
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
