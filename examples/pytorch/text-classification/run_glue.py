@@ -418,6 +418,11 @@ def main():
         print(name, isinstance(module, nn.Linear))
         # print(model)
 
+    for name, param in model.named_parameters():
+        # print(name, type(module))
+        print(name, param)
+        # print(model)
+
     # Preprocessing the raw_datasets
     if data_args.task_name is not None:
         sentence1_key, sentence2_key = task_to_keys[data_args.task_name]
