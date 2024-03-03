@@ -416,8 +416,8 @@ def main():
     print("Quantize model...")
     # Lookup layers to quantize
     layers_to_quantize = [
-        layer
-        for layer in model.named_modules()
+        (name, module)
+        for name, module in model.named_modules()
         if isinstance(module, nn.Linear)
     ]
 
