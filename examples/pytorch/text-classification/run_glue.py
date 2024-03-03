@@ -412,7 +412,11 @@ def main():
     )
 
     print("Printing the model...")
-    print(model)
+    import torch.nn as nn
+    for name, module in model.named_modules():
+        # print(name, type(module))
+        print(name, isinstance(module, nn.Linear))
+        # print(model)
 
     # Preprocessing the raw_datasets
     if data_args.task_name is not None:
