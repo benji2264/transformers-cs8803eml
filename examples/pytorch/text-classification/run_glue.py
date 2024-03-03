@@ -398,6 +398,8 @@ def main():
         token=model_args.token,
         trust_remote_code=model_args.trust_remote_code,
     )
+
+    print("Loading the model...")
     model = AutoModelForSequenceClassification.from_pretrained(
         model_args.model_name_or_path,
         from_tf=bool(".ckpt" in model_args.model_name_or_path),
@@ -408,6 +410,9 @@ def main():
         trust_remote_code=model_args.trust_remote_code,
         ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
     )
+
+    print("Printing the model...")
+    print(model)
 
     # Preprocessing the raw_datasets
     if data_args.task_name is not None:
