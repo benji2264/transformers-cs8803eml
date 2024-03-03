@@ -15,6 +15,7 @@ from transformers import glue_convert_examples_to_features as convert_examples_t
 from transformers import glue_output_modes, glue_tasks_num_labels
 from transformers import glue_processors as processors
 
+from transformers.models.roberta import quantize as qt
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +29,13 @@ class GLUETransformer(BaseTransformer):
         hparams.glue_output_mode = glue_output_modes[hparams.task]
         num_labels = glue_tasks_num_labels[hparams.task]
 
+
+        print("Loading the model...")
         super().__init__(hparams, num_labels, self.mode)
 
+        print("Quantizing the model...")
+        print(self.model)
+        
     def forward(self, **inputs):
         return self.model(**inputs)
 
