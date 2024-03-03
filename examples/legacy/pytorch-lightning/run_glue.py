@@ -30,12 +30,22 @@ class GLUETransformer(BaseTransformer):
         num_labels = glue_tasks_num_labels[hparams.task]
 
 
-        print("Loading the model...")
+        print("Benji loading the model...")
+        print("Benji loading the model...")
+        print("Benji loading the model...")
+        print("Benji loading the model...")
+        print("Benji loading the model...")
+        print("Benji loading the model...")
         super().__init__(hparams, num_labels, self.mode)
 
-        print("Quantizing the model...")
+        print("Benji quantizing the model...")
+        print("Benji quantizing the model...")
+        print("Benji quantizing the model...")
+        print("Benji quantizing the model...")
+        print("Benji quantizing the model...")
+        print("Benji quantizing the model...")
         print(self.model)
-        
+
     def forward(self, **inputs):
         return self.model(**inputs)
 
@@ -180,6 +190,7 @@ class GLUETransformer(BaseTransformer):
 
 
 def main():
+    print("Running glue...")
     parser = argparse.ArgumentParser()
     add_generic_args(parser, os.getcwd())
     parser = GLUETransformer.add_model_specific_args(parser, os.getcwd())
