@@ -414,16 +414,25 @@ def main():
     )
 
     print("Quantize model...")
-    for name, module in model.named_modules():
-        if isinstance(module, nn.Linear):
-            # Quantize linear layer
-            quantized_linear = quantize.QLinear(module.in_features, module.out_features, bias=module.bias is not None)
-            # Copy pre-trained weights
-            quantized_linear.weight.data.copy_(module.weight.data)
-            if module.bias is not None:
-                quantized_linear.bias.data.copy_(module.bias.data)
-            # Replace original linear layer with quantized version
-            setattr(model, name, quantized_linear)
+    # Lookup layers to quantize
+    layers_to_quantize = [
+        layer
+        for layer in model.named_modules()
+        if isinstance(module, nn.Linear)
+    ]
+
+    # Quantize layers
+    for name, module in layers_to_quantize:
+        # Quantize linear layer
+        quantized_linear = quantize.QLinear(module.in_features, module.out_features, bias=module.bias is not None)
+        
+        # Copy pre-trained weights
+        quantized_linear.weight.data = module.weight.data.clone()
+        if module.bias is not None:
+            quantized_linear.bias.data = module.bias.data.clone()
+        
+        # Replace original linear layer with quantized version
+        setattr(model, name, quantized_linear)
 
     # print("Printing the model...")
     # import torch.nn as nn
