@@ -411,10 +411,10 @@ def main():
         ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
     )
 
-    print("Freezing the backbone")
-    for name, param in model.named_parameters():
-        if name.startswith("roberta"):
-            param.requires_grad = False
+    # print("Freezing the backbone...")
+    # for name, param in model.named_parameters():
+    #     if name.startswith("roberta"):
+    #         param.requires_grad = False
 
     # print("Printing the model...")
     # import torch.nn as nn
