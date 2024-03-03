@@ -24,6 +24,8 @@ import warnings
 from dataclasses import dataclass, field
 from typing import Optional
 
+import torch.nn as nn
+
 import datasets
 import evaluate
 import numpy as np
@@ -44,7 +46,7 @@ from transformers import (
     set_seed,
 )
 from transformers.trainer_utils import get_last_checkpoint
-from transformers.utils import check_min_version, send_example_telemetry
+from transformers.utils import check_min_version, send_example_telemetry, quantize
 from transformers.utils.versions import require_version
 
 
@@ -411,11 +413,17 @@ def main():
         ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
     )
 
-    print("Freezing the backbone...")
-    for name, param in model.named_parameters():
-        if name.startswith("roberta"):
-            param.requires_grad = False
-            print(f"{name} was frozen")
+    print("Quantize model...")
+    for name, module in model.named_modules():
+        if isinstance(module, nn.Linear):
+            # Quantize linear layer
+            quantized_linear = quantize.QLinear(module.in_features, module.out_features, bias=module.bias is not None)
+            # Copy pre-trained weights
+            quantized_linear.weight.data.copy_(module.weight.data)
+            if module.bias is not None:
+                quantized_linear.bias.data.copy_(module.bias.data)
+            # Replace original linear layer with quantized version
+            setattr(model, name, quantized_linear)
 
     # print("Printing the model...")
     # import torch.nn as nn

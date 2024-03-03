@@ -257,31 +257,32 @@ class QConv2d(nn.Conv2d):
 
 class QLinear(nn.Linear):
     """Quantized Linear layer."""
-
-    def __init__(self, in_features, out_features, bias=True):
+    def __init__(self, in_features, out_features, bias=True, num_bits=8, num_grad_bits=8):
         super(QLinear, self).__init__(in_features, out_features, bias)
 
+        self.num_bits = num_bits
+        self.num_grad_bits = num_grad_bits
         self.quantize_input = QuantMeasure(shape_measure=(1,), flatten_dims=(-1))
 
-    def forward(self, input, num_bits, num_grad_bits):
-        if num_bits == 0:
+    def forward(self, input):
+        if self.num_bits == 0:
             output = F.linear(input, self.weight, self.bias)
             return output
 
         if self.bias is not None:
             qbias = quantize(
-                self.bias, num_bits=num_bits,
+                self.bias, num_bits=self.num_bits,
                 flatten_dims=(0,))
         else:
             qbias = None
 
-        weight_qparams = calculate_qparams(self.weight, num_bits=num_bits, flatten_dims=(-1,),
+        weight_qparams = calculate_qparams(self.weight, num_bits=self.num_bits, flatten_dims=(-1,),
                                            reduce_dim=None)
         qweight = quantize(self.weight, qparams=weight_qparams)
 
-        qinput = self.quantize_input(input, num_bits)
+        qinput = self.quantize_input(input, self.num_bits)
         output = F.linear(qinput, qweight, qbias)
-        output = quantize_grad(output, num_bits=num_grad_bits, flatten_dims=(-1,))
+        output = quantize_grad(output, num_bits=self.num_grad_bits, flatten_dims=(-1,))
 
         return output
 
