@@ -64,7 +64,7 @@ ROBERTA_PRETRAINED_MODEL_ARCHIVE_LIST = [
 
 
 
-class RobertaEmbeddings(nn.Module):
+class QRobertaEmbeddings(nn.Module):
     """
     Same as BertEmbeddings with a tiny tweak for positional embeddings indexing.
     """
@@ -154,7 +154,7 @@ class RobertaEmbeddings(nn.Module):
 
 
 # Copied from transformers.models.bert.modeling_bert.BertSelfAttention with Bert->Roberta
-class RobertaSelfAttention(nn.Module):
+class QRobertaSelfAttention(nn.Module):
     def __init__(self, config, position_embedding_type=None):
         super().__init__()
         if config.hidden_size % config.num_attention_heads != 0 and not hasattr(config, "embedding_size"):
@@ -289,7 +289,7 @@ class RobertaSelfAttention(nn.Module):
 
 
 # Copied from transformers.models.bert.modeling_bert.BertSelfOutput
-class RobertaSelfOutput(nn.Module):
+class QRobertaSelfOutput(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.dense = quantize.QLinear(config.hidden_size, config.hidden_size)
@@ -304,7 +304,7 @@ class RobertaSelfOutput(nn.Module):
 
 
 # Copied from transformers.models.bert.modeling_bert.BertAttention with Bert->Roberta
-class RobertaAttention(nn.Module):
+class QRobertaAttention(nn.Module):
     def __init__(self, config, position_embedding_type=None):
         super().__init__()
         self.self = RobertaSelfAttention(config, position_embedding_type=position_embedding_type)
@@ -354,7 +354,7 @@ class RobertaAttention(nn.Module):
 
 
 # Copied from transformers.models.bert.modeling_bert.BertIntermediate
-class RobertaIntermediate(nn.Module):
+class QRobertaIntermediate(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.dense = quantize.QLinear(config.hidden_size, config.intermediate_size)
@@ -370,7 +370,7 @@ class RobertaIntermediate(nn.Module):
 
 
 # Copied from transformers.models.bert.modeling_bert.BertOutput
-class RobertaOutput(nn.Module):
+class QRobertaOutput(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.dense = quantize.QLinear(config.intermediate_size, config.hidden_size)
@@ -385,7 +385,7 @@ class RobertaOutput(nn.Module):
 
 
 # Copied from transformers.models.bert.modeling_bert.BertLayer with Bert->Roberta
-class RobertaLayer(nn.Module):
+class QRobertaLayer(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.chunk_size_feed_forward = config.chunk_size_feed_forward
@@ -472,7 +472,7 @@ class RobertaLayer(nn.Module):
 
 
 # Copied from transformers.models.bert.modeling_bert.BertEncoder with Bert->Roberta
-class RobertaEncoder(nn.Module):
+class QRobertaEncoder(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
@@ -566,7 +566,7 @@ class RobertaEncoder(nn.Module):
 
 
 # Copied from transformers.models.bert.modeling_bert.BertPooler
-class RobertaPooler(nn.Module):
+class QRobertaPooler(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.dense = quantize.QLinear(config.hidden_size, config.hidden_size)
@@ -581,7 +581,7 @@ class RobertaPooler(nn.Module):
         return pooled_output
 
 
-class RobertaPreTrainedModel(PreTrainedModel):
+class QRobertaPreTrainedModel(PreTrainedModel):
     """
     An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
     models.
@@ -681,7 +681,7 @@ ROBERTA_INPUTS_DOCSTRING = r"""
     "The bare RoBERTa Model transformer outputting raw hidden-states without any specific head on top.",
     ROBERTA_START_DOCSTRING,
 )
-class RobertaModel(RobertaPreTrainedModel):
+class QRobertaModel(RobertaPreTrainedModel):
     """
 
     The model can behave as an encoder (with only self-attention) as well as a decoder, in which case a layer of
@@ -865,7 +865,7 @@ class RobertaModel(RobertaPreTrainedModel):
 @add_start_docstrings(
     """RoBERTa Model with a `language modeling` head on top for CLM fine-tuning.""", ROBERTA_START_DOCSTRING
 )
-class RobertaForCausalLM(RobertaPreTrainedModel):
+class QRobertaForCausalLM(RobertaPreTrainedModel):
     _tied_weights_keys = ["lm_head.decoder.weight", "lm_head.decoder.bias"]
 
     def __init__(self, config):
@@ -1025,7 +1025,7 @@ class RobertaForCausalLM(RobertaPreTrainedModel):
 
 
 @add_start_docstrings("""RoBERTa Model with a `language modeling` head on top.""", ROBERTA_START_DOCSTRING)
-class RobertaForMaskedLM(RobertaPreTrainedModel):
+class QRobertaForMaskedLM(RobertaPreTrainedModel):
     _tied_weights_keys = ["lm_head.decoder.weight", "lm_head.decoder.bias"]
 
     def __init__(self, config):
@@ -1118,7 +1118,7 @@ class RobertaForMaskedLM(RobertaPreTrainedModel):
         )
 
 
-class RobertaLMHead(nn.Module):
+class QRobertaLMHead(nn.Module):
     """Roberta Head for masked language modeling."""
 
     def __init__(self, config):
@@ -1156,7 +1156,7 @@ class RobertaLMHead(nn.Module):
     """,
     ROBERTA_START_DOCSTRING,
 )
-class RobertaForSequenceClassification(RobertaPreTrainedModel):
+class QRobertaForSequenceClassification(RobertaPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
         self.num_labels = config.num_labels
@@ -1255,7 +1255,7 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
     """,
     ROBERTA_START_DOCSTRING,
 )
-class RobertaForMultipleChoice(RobertaPreTrainedModel):
+class QRobertaForMultipleChoice(RobertaPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
 
@@ -1347,7 +1347,7 @@ class RobertaForMultipleChoice(RobertaPreTrainedModel):
     """,
     ROBERTA_START_DOCSTRING,
 )
-class RobertaForTokenClassification(RobertaPreTrainedModel):
+class QRobertaForTokenClassification(RobertaPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
         self.num_labels = config.num_labels
@@ -1425,7 +1425,7 @@ class RobertaForTokenClassification(RobertaPreTrainedModel):
         )
 
 
-class RobertaClassificationHead(nn.Module):
+class QRobertaClassificationHead(nn.Module):
     """Head for sentence-level classification tasks."""
 
     def __init__(self, config):
@@ -1454,7 +1454,7 @@ class RobertaClassificationHead(nn.Module):
     """,
     ROBERTA_START_DOCSTRING,
 )
-class RobertaForQuestionAnswering(RobertaPreTrainedModel):
+class QRobertaForQuestionAnswering(RobertaPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
         self.num_labels = config.num_labels
