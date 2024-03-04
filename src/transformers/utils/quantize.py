@@ -302,9 +302,9 @@ class QLinear(nn.Linear):
         self.num_bits = num_bits
         self.num_grad_bits = num_grad_bits
 
-    def forward(self, input, num_bits, num_grad_bits):
+    def forward(self, input):
         print("forward1")
-        if num_bits == 0:
+        if self.num_bits == 0:
             output = F.linear(input, self.weight, self.bias)
             return output
 
