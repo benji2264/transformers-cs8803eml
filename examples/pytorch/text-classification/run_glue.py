@@ -571,6 +571,39 @@ def main():
     else:
         data_collator = None
 
+    # Pre-training quantization
+    print(f"PRE Quantize model to {n_bits} bits...")
+    # Lookup layers to quantize
+    layers_to_quantize = [
+        (name, module)
+        for name, module in model.named_modules()
+        if isinstance(module, nn.Linear)
+    ]
+
+    # Quantize layers
+    for name, module in layers_to_quantize:
+        # Quantize linear layer
+        quantized_linear = quantize.QLinear(
+            module.in_features, 
+            module.out_features, 
+            bias=module.bias is not None, 
+            num_bits=n_bits, 
+            num_grad_bits=n_bits,
+        )
+        # print(name, type(quantized_linear))
+
+        # Copy pre-trained weights
+        quantized_linear.weight.data = module.weight.data.clone()
+        if module.bias is not None:
+            quantized_linear.bias.data = module.bias.data.clone()
+        
+        # Replace original linear layer with quantized version
+        setattr(model, name, quantized_linear)
+
+    # for name, module in model.named_modules():
+    #     print(name, type(module))
+
+
     # Initialize our Trainer
     trainer = Trainer(
         model=model,
@@ -636,37 +669,37 @@ def main():
         logger.info("*** Evaluate ***")
         do_eval(eval_dataset,  trainer)
 
-    # Post-training quantization
-    print(f"Quantize model to {n_bits} bits...")
-    # Lookup layers to quantize
-    layers_to_quantize = [
-        (name, module)
-        for name, module in model.named_modules()
-        if isinstance(module, nn.Linear)
-    ]
+    # # Post-training quantization
+    # print(f"Quantize model to {n_bits} bits...")
+    # # Lookup layers to quantize
+    # layers_to_quantize = [
+    #     (name, module)
+    #     for name, module in model.named_modules()
+    #     if isinstance(module, nn.Linear)
+    # ]
 
-    # Quantize layers
-    for name, module in layers_to_quantize:
-        # Quantize linear layer
-        quantized_linear = quantize.QLinear(
-            module.in_features, 
-            module.out_features, 
-            bias=module.bias is not None, 
-            num_bits=n_bits, 
-            num_grad_bits=n_bits,
-        )
-        # print(name, type(quantized_linear))
+    # # Quantize layers
+    # for name, module in layers_to_quantize:
+    #     # Quantize linear layer
+    #     quantized_linear = quantize.QLinear(
+    #         module.in_features, 
+    #         module.out_features, 
+    #         bias=module.bias is not None, 
+    #         num_bits=n_bits, 
+    #         num_grad_bits=n_bits,
+    #     )
+    #     # print(name, type(quantized_linear))
 
-        # Copy pre-trained weights
-        quantized_linear.weight.data = module.weight.data.clone()
-        if module.bias is not None:
-            quantized_linear.bias.data = module.bias.data.clone()
+    #     # Copy pre-trained weights
+    #     quantized_linear.weight.data = module.weight.data.clone()
+    #     if module.bias is not None:
+    #         quantized_linear.bias.data = module.bias.data.clone()
         
-        # Replace original linear layer with quantized version
-        setattr(model, name, quantized_linear)
+    #     # Replace original linear layer with quantized version
+    #     setattr(model, name, quantized_linear)
 
-    # for name, module in model.named_modules():
-    #     print(name, type(module))
+    # # for name, module in model.named_modules():
+    # #     print(name, type(module))
 
     # Evaluation
     # print(from)
