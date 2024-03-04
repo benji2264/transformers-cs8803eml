@@ -232,7 +232,7 @@ def main():
     for i, s in enumerate(sys.argv):
         if s == "--num_bits":
             # Store the index of the next element
-            n_bits = sys.argv[i+1]
+            n_bits = int(sys.argv[i+1])
             # Remove "--num_bits" and the next element from the list
             del sys.argv[i:i+2]
             break
@@ -637,7 +637,7 @@ def main():
         do_eval(eval_dataset,  trainer)
 
     # Post-training quantization
-    print(f"Quantize model to {n_bits} ({type(n_bits)}) bits...")
+    print(f"Quantize model to {n_bits} bits...")
     # Lookup layers to quantize
     layers_to_quantize = [
         (name, module)
