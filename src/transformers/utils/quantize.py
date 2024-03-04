@@ -295,9 +295,10 @@ class QConv2d(nn.Conv2d):
 class QLinear(nn.Linear):
     """Quantized linear layer."""
 
-    def __init__(self, in_features, out_features, bias=True, num_bits=8, num_grad_bits=8):
+    def __init__(self, in_features, out_features, bias=True, num_bits=16, num_grad_bits=16):
         super(QLinear, self).__init__(in_features, out_features, bias)
-
+        assert num_bits == 4 or num_bits == 8, "num_bits should have been modified"
+        assert num_grad_bits == 4 or num_grad_bits == 8, "num_grad_bits should have been modified"
         self.quantize_input = QuantMeasure(shape_measure=(1, 1), flatten_dims=(1, -1))
         self.num_bits = num_bits
         self.num_grad_bits = num_grad_bits

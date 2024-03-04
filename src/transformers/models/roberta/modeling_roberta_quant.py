@@ -155,7 +155,7 @@ class QRobertaEmbeddings(nn.Module):
 
 # Copied from transformers.models.bert.modeling_bert.BertSelfAttention with Bert->Roberta
 class QRobertaSelfAttention(nn.Module):
-    def __init__(self, config, position_embedding_type=None):
+    def __init__(self, config, n_bits, position_embedding_type=None):
         super().__init__()
         if config.hidden_size % config.num_attention_heads != 0 and not hasattr(config, "embedding_size"):
             raise ValueError(
@@ -167,9 +167,9 @@ class QRobertaSelfAttention(nn.Module):
         self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
         self.all_head_size = self.num_attention_heads * self.attention_head_size
 
-        self.query = quantize.QLinear(config.hidden_size, self.all_head_size)
-        self.key = quantize.QLinear(config.hidden_size, self.all_head_size)
-        self.value = quantize.QLinear(config.hidden_size, self.all_head_size)
+        self.query = quantize.QLinear(config.hidden_size, self.all_head_size, num_bits=n_bits, num_grad_bits=n_bits)
+        self.key = quantize.QLinear(config.hidden_size, self.all_head_size, num_bits=n_bits, num_grad_bits=n_bits)
+        self.value = quantize.QLinear(config.hidden_size, self.all_head_size, num_bits=n_bits, num_grad_bits=n_bits)
 
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
         self.position_embedding_type = position_embedding_type or getattr(
@@ -289,9 +289,9 @@ class QRobertaSelfAttention(nn.Module):
 
 # Copied from transformers.models.bert.modeling_bert.BertSelfOutput
 class QRobertaSelfOutput(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, n_bits):
         super().__init__()
-        self.dense = quantize.QLinear(config.hidden_size, config.hidden_size)
+        self.dense = quantize.QLinear(config.hidden_size, config.hidden_size, num_bits=n_bits, num_grad_bits=n_bits)
         self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
@@ -304,10 +304,10 @@ class QRobertaSelfOutput(nn.Module):
 
 # Copied from transformers.models.bert.modeling_bert.BertAttention with Bert->Roberta
 class QRobertaAttention(nn.Module):
-    def __init__(self, config, position_embedding_type=None):
+    def __init__(self, config, n_bits, position_embedding_type=None):
         super().__init__()
-        self.self = QRobertaSelfAttention(config, position_embedding_type=position_embedding_type)
-        self.output = QRobertaSelfOutput(config)
+        self.self = QRobertaSelfAttention(config, n_bits, position_embedding_type=position_embedding_type)
+        self.output = QRobertaSelfOutput(config, n_bits)
         self.pruned_heads = set()
 
     def prune_heads(self, heads):
@@ -354,9 +354,9 @@ class QRobertaAttention(nn.Module):
 
 # Copied from transformers.models.bert.modeling_bert.BertIntermediate
 class QRobertaIntermediate(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, n_bits):
         super().__init__()
-        self.dense = quantize.QLinear(config.hidden_size, config.intermediate_size)
+        self.dense = quantize.QLinear(config.hidden_size, config.intermediate_size, num_bits=n_bits, num_grad_bits=n_bits)
         if isinstance(config.hidden_act, str):
             self.intermediate_act_fn = ACT2FN[config.hidden_act]
         else:
@@ -370,9 +370,9 @@ class QRobertaIntermediate(nn.Module):
 
 # Copied from transformers.models.bert.modeling_bert.BertOutput
 class QRobertaOutput(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, n_bits):
         super().__init__()
-        self.dense = quantize.QLinear(config.intermediate_size, config.hidden_size)
+        self.dense = quantize.QLinear(config.intermediate_size, config.hidden_size, num_bits=n_bits, num_grad_bits=n_bits)
         self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
@@ -385,19 +385,19 @@ class QRobertaOutput(nn.Module):
 
 # Copied from transformers.models.bert.modeling_bert.BertLayer with Bert->Roberta
 class QRobertaLayer(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, n_bits):
         super().__init__()
         self.chunk_size_feed_forward = config.chunk_size_feed_forward
         self.seq_len_dim = 1
-        self.attention = QRobertaAttention(config)
+        self.attention = QRobertaAttention(config, n_bits)
         self.is_decoder = config.is_decoder
         self.add_cross_attention = config.add_cross_attention
         if self.add_cross_attention:
             if not self.is_decoder:
                 raise ValueError(f"{self} should be used as a decoder model if cross attention is added")
-            self.crossattention = QRobertaAttention(config, position_embedding_type="absolute")
-        self.intermediate = QRobertaIntermediate(config)
-        self.output = QRobertaOutput(config)
+            self.crossattention = QRobertaAttention(config, n_bits, position_embedding_type="absolute")
+        self.intermediate = QRobertaIntermediate(config, n_bits)
+        self.output = QRobertaOutput(config, n_bits)
 
     def forward(
         self,
@@ -472,10 +472,10 @@ class QRobertaLayer(nn.Module):
 
 # Copied from transformers.models.bert.modeling_bert.BertEncoder with Bert->Roberta
 class QRobertaEncoder(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, n_bits):
         super().__init__()
         self.config = config
-        self.layer = nn.ModuleList([QRobertaLayer(config) for _ in range(config.num_hidden_layers)])
+        self.layer = nn.ModuleList([QRobertaLayer(config, n_bits) for _ in range(config.num_hidden_layers)])
         self.gradient_checkpointing = False
 
     def forward(
@@ -566,9 +566,9 @@ class QRobertaEncoder(nn.Module):
 
 # Copied from transformers.models.bert.modeling_bert.BertPooler
 class QRobertaPooler(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, n_bits):
         super().__init__()
-        self.dense = quantize.QLinear(config.hidden_size, config.hidden_size)
+        self.dense = quantize.QLinear(config.hidden_size, config.hidden_size, num_bits=n_bits, num_grad_bits=n_bits)
         self.activation = nn.Tanh()
 
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
@@ -697,14 +697,14 @@ class QRobertaModel(QRobertaPreTrainedModel):
     """
 
     # Copied from transformers.models.bert.modeling_bert.BertModel.__init__ with Bert->Roberta
-    def __init__(self, config, add_pooling_layer=True):
+    def __init__(self, config, n_bits, add_pooling_layer=True):
         super().__init__(config)
         self.config = config
 
         self.embeddings = QRobertaEmbeddings(config)
-        self.encoder = QRobertaEncoder(config)
+        self.encoder = QRobertaEncoder(config, n_bits)
 
-        self.pooler = QRobertaPooler(config) if add_pooling_layer else None
+        self.pooler = QRobertaPooler(config, n_bits) if add_pooling_layer else None
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -1156,12 +1156,12 @@ class QRobertaLMHead(nn.Module):
     ROBERTA_START_DOCSTRING,
 )
 class QRobertaForSequenceClassification(QRobertaPreTrainedModel):
-    def __init__(self, config):
+    def __init__(self, config, n_bits):
         super().__init__(config)
         self.num_labels = config.num_labels
         self.config = config
 
-        self.roberta = QRobertaModel(config, add_pooling_layer=False)
+        self.roberta = QRobertaModel(config, n_bits, add_pooling_layer=False)
         self.classifier = QRobertaClassificationHead(config)
 
         # Initialize weights and apply final processing

@@ -671,46 +671,14 @@ def main():
 
     # Define new quantized model
     from transformers.models.roberta.modeling_roberta_quant import QRobertaForSequenceClassification
-    
-    print(f"Quantize model to {n_bits} bits...")    
+            
+    print(f"\n****************************\n* Quantize model to {n_bits} bits *\n****************************")    
     qmodel = QRobertaForSequenceClassification.from_pretrained(
         training_args.output_dir, use_safetensors=True,
     )
 
-    # # Post-training quantization
-    # # Lookup layers to quantize
-    # layers_to_quantize = [
-    #     (name, module)
-    #     for name, module in model.named_modules()
-    #     if isinstance(module, nn.Linear)
-    # ]
-
-    # # Quantize layers
-    # for name, module in layers_to_quantize:
-    #     # Quantize linear layer
-    #     quantized_linear = quantize.QLinear(
-    #         module.in_features, 
-    #         module.out_features, 
-    #         bias=module.bias is not None, 
-    #         num_bits=n_bits, 
-    #         num_grad_bits=n_bits,
-    #     )
-    #     # print(name, type(quantized_linear))
-
-    #     # Copy pre-trained weights
-    #     quantized_linear.weight.data = module.weight.data.clone()
-    #     if module.bias is not None:
-    #         quantized_linear.bias.data = module.bias.data.clone()
-        
-    #     # Replace original linear layer with quantized version
-    #     setattr(model, name, quantized_linear)
-
-    # # for name, module in model.named_modules():
-    # #     print(name, type(module))
-
-    # Evaluation
-    # print(from)
-    trainer = Trainer( # reset trainer with new model
+    # New trainer with quant model (used for eval only)
+    trainer = Trainer( 
         model=qmodel,
         args=training_args,
         train_dataset=train_dataset if training_args.do_train else None,
