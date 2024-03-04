@@ -600,8 +600,8 @@ def main():
         # Replace original linear layer with quantized version
         setattr(model, name, quantized_linear)
 
-    # for name, module in model.named_modules():
-    #     print(name, type(module))
+    for name, module in model.named_modules():
+        print(name, type(module))
 
 
     # Initialize our Trainer
