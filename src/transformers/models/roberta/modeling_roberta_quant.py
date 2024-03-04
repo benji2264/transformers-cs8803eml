@@ -23,8 +23,8 @@ import torch.utils.checkpoint
 from torch import nn
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 
-from ...activations import ACT2FN, gelu
-from ...modeling_outputs import (
+from transformers.activations import ACT2FN, gelu
+from transformers.modeling_outputs import (
     BaseModelOutputWithPastAndCrossAttentions,
     BaseModelOutputWithPoolingAndCrossAttentions,
     CausalLMOutputWithCrossAttentions,
@@ -34,16 +34,16 @@ from ...modeling_outputs import (
     SequenceClassifierOutput,
     TokenClassifierOutput,
 )
-from ...modeling_utils import PreTrainedModel
-from ...pytorch_utils import apply_chunking_to_forward, find_pruneable_heads_and_indices, prune_linear_layer
-from ...utils import (
+from transformers.modeling_utils import PreTrainedModel
+from transformers.pytorch_utils import apply_chunking_to_forward, find_pruneable_heads_and_indices, prune_linear_layer
+from transformers.utils import (
     add_code_sample_docstrings,
     add_start_docstrings,
     add_start_docstrings_to_model_forward,
     logging,
     replace_return_docstrings,
 )
-from .configuration_roberta import RobertaConfig
+from transformers.models.roberta.configuration_roberta import RobertaConfig
 
 from transformers.utils import quantize
 
@@ -307,8 +307,8 @@ class QRobertaSelfOutput(nn.Module):
 class QRobertaAttention(nn.Module):
     def __init__(self, config, position_embedding_type=None):
         super().__init__()
-        self.self = RobertaSelfAttention(config, position_embedding_type=position_embedding_type)
-        self.output = RobertaSelfOutput(config)
+        self.self = QRobertaSelfAttention(config, position_embedding_type=position_embedding_type)
+        self.output = QRobertaSelfOutput(config)
         self.pruned_heads = set()
 
     def prune_heads(self, heads):
@@ -390,15 +390,15 @@ class QRobertaLayer(nn.Module):
         super().__init__()
         self.chunk_size_feed_forward = config.chunk_size_feed_forward
         self.seq_len_dim = 1
-        self.attention = RobertaAttention(config)
+        self.attention = QRobertaAttention(config)
         self.is_decoder = config.is_decoder
         self.add_cross_attention = config.add_cross_attention
         if self.add_cross_attention:
             if not self.is_decoder:
                 raise ValueError(f"{self} should be used as a decoder model if cross attention is added")
-            self.crossattention = RobertaAttention(config, position_embedding_type="absolute")
-        self.intermediate = RobertaIntermediate(config)
-        self.output = RobertaOutput(config)
+            self.crossattention = QRobertaAttention(config, position_embedding_type="absolute")
+        self.intermediate = QRobertaIntermediate(config)
+        self.output = QRobertaOutput(config)
 
     def forward(
         self,
@@ -476,7 +476,7 @@ class QRobertaEncoder(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        self.layer = nn.ModuleList([RobertaLayer(config) for _ in range(config.num_hidden_layers)])
+        self.layer = nn.ModuleList([QRobertaLayer(config) for _ in range(config.num_hidden_layers)])
         self.gradient_checkpointing = False
 
     def forward(
@@ -681,7 +681,7 @@ ROBERTA_INPUTS_DOCSTRING = r"""
     "The bare RoBERTa Model transformer outputting raw hidden-states without any specific head on top.",
     ROBERTA_START_DOCSTRING,
 )
-class QRobertaModel(RobertaPreTrainedModel):
+class QRobertaModel(QRobertaPreTrainedModel):
     """
 
     The model can behave as an encoder (with only self-attention) as well as a decoder, in which case a layer of
@@ -702,10 +702,10 @@ class QRobertaModel(RobertaPreTrainedModel):
         super().__init__(config)
         self.config = config
 
-        self.embeddings = RobertaEmbeddings(config)
-        self.encoder = RobertaEncoder(config)
+        self.embeddings = QRobertaEmbeddings(config)
+        self.encoder = QRobertaEncoder(config)
 
-        self.pooler = RobertaPooler(config) if add_pooling_layer else None
+        self.pooler = QRobertaPooler(config) if add_pooling_layer else None
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -865,7 +865,7 @@ class QRobertaModel(RobertaPreTrainedModel):
 @add_start_docstrings(
     """RoBERTa Model with a `language modeling` head on top for CLM fine-tuning.""", ROBERTA_START_DOCSTRING
 )
-class QRobertaForCausalLM(RobertaPreTrainedModel):
+class QRobertaForCausalLM(QRobertaPreTrainedModel):
     _tied_weights_keys = ["lm_head.decoder.weight", "lm_head.decoder.bias"]
 
     def __init__(self, config):
@@ -874,8 +874,8 @@ class QRobertaForCausalLM(RobertaPreTrainedModel):
         if not config.is_decoder:
             logger.warning("If you want to use `RobertaLMHeadModel` as a standalone, add `is_decoder=True.`")
 
-        self.roberta = RobertaModel(config, add_pooling_layer=False)
-        self.lm_head = RobertaLMHead(config)
+        self.roberta = QRobertaModel(config, add_pooling_layer=False)
+        self.lm_head = QRobertaLMHead(config)
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -1025,7 +1025,7 @@ class QRobertaForCausalLM(RobertaPreTrainedModel):
 
 
 @add_start_docstrings("""RoBERTa Model with a `language modeling` head on top.""", ROBERTA_START_DOCSTRING)
-class QRobertaForMaskedLM(RobertaPreTrainedModel):
+class QRobertaForMaskedLM(QRobertaPreTrainedModel):
     _tied_weights_keys = ["lm_head.decoder.weight", "lm_head.decoder.bias"]
 
     def __init__(self, config):
@@ -1037,8 +1037,8 @@ class QRobertaForMaskedLM(RobertaPreTrainedModel):
                 "bi-directional self-attention."
             )
 
-        self.roberta = RobertaModel(config, add_pooling_layer=False)
-        self.lm_head = RobertaLMHead(config)
+        self.roberta = QRobertaModel(config, add_pooling_layer=False)
+        self.lm_head = QRobertaLMHead(config)
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -1156,14 +1156,14 @@ class QRobertaLMHead(nn.Module):
     """,
     ROBERTA_START_DOCSTRING,
 )
-class QRobertaForSequenceClassification(RobertaPreTrainedModel):
+class QRobertaForSequenceClassification(QRobertaPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
         self.num_labels = config.num_labels
         self.config = config
 
-        self.roberta = RobertaModel(config, add_pooling_layer=False)
-        self.classifier = RobertaClassificationHead(config)
+        self.roberta = QRobertaModel(config, add_pooling_layer=False)
+        self.classifier = QRobertaClassificationHead(config)
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -1255,11 +1255,11 @@ class QRobertaForSequenceClassification(RobertaPreTrainedModel):
     """,
     ROBERTA_START_DOCSTRING,
 )
-class QRobertaForMultipleChoice(RobertaPreTrainedModel):
+class QRobertaForMultipleChoice(QRobertaPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
 
-        self.roberta = RobertaModel(config)
+        self.roberta = QRobertaModel(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.classifier = quantize.QLinear(config.hidden_size, 1)
 
@@ -1347,12 +1347,12 @@ class QRobertaForMultipleChoice(RobertaPreTrainedModel):
     """,
     ROBERTA_START_DOCSTRING,
 )
-class QRobertaForTokenClassification(RobertaPreTrainedModel):
+class QRobertaForTokenClassification(QRobertaPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
         self.num_labels = config.num_labels
 
-        self.roberta = RobertaModel(config, add_pooling_layer=False)
+        self.roberta = QRobertaModel(config, add_pooling_layer=False)
         classifier_dropout = (
             config.classifier_dropout if config.classifier_dropout is not None else config.hidden_dropout_prob
         )
@@ -1454,12 +1454,12 @@ class QRobertaClassificationHead(nn.Module):
     """,
     ROBERTA_START_DOCSTRING,
 )
-class QRobertaForQuestionAnswering(RobertaPreTrainedModel):
+class QRobertaForQuestionAnswering(QRobertaPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
         self.num_labels = config.num_labels
 
-        self.roberta = RobertaModel(config, add_pooling_layer=False)
+        self.roberta = QRobertaModel(config, add_pooling_layer=False)
         self.qa_outputs = quantize.QLinear(config.hidden_size, config.num_labels)
 
         # Initialize weights and apply final processing
