@@ -637,7 +637,7 @@ def main():
         do_eval(eval_dataset,  trainer)
 
     # Post-training quantization
-    print(f"Quantize model to {n_bits} bits...")
+    print(f"Quantize model to {n_bits} ({type(n_bits)}) bits...")
     # Lookup layers to quantize
     layers_to_quantize = [
         (name, module)
