@@ -303,32 +303,26 @@ class QLinear(nn.Linear):
         self.num_grad_bits = num_grad_bits
 
     def forward(self, input):
-        print("forward1")
         if self.num_bits == 0:
             output = F.linear(input, self.weight, self.bias)
             return output
 
-        print("forward2")
         # Quantize bias if present
         if self.bias is not None:
             qbias = quantize(self.bias, num_bits=self.num_bits, flatten_dims=(0, -1))
         else:
             qbias = None
 
-        print("forward3")
         # Calculate quantization parameters for weights
         weight_qparams = calculate_qparams(self.weight, num_bits=self.num_bits, flatten_dims=(1, -1), reduce_dim=None)
         qweight = quantize(self.weight, qparams=weight_qparams)
 
-        print("forward4")
         # Quantize input
         qinput = self.quantize_input(input, self.num_bits)
 
-        print("forward5")
         # Perform quantized linear operation
         output = F.linear(qinput, qweight, qbias)
 
-        print("forward6")
         # Quantize gradients for backward pass
         output = quantize_grad(output, num_bits=self.num_grad_bits, flatten_dims=(1, -1))
 
