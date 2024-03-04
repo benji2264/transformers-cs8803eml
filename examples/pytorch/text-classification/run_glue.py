@@ -655,8 +655,7 @@ def main():
             num_bits=n_bits, 
             num_grad_bits=n_bits,
         )
-
-        print(name, type(quantized_linear))
+        # print(name, type(quantized_linear))
 
         # Copy pre-trained weights
         quantized_linear.weight.data = module.weight.data.clone()
