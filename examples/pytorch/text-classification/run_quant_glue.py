@@ -438,14 +438,12 @@ def main():
         ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
     )
 
-    
-
-    print("Printing the model...")
-    import torch.nn as nn
-    for name, module in model.named_modules():
-        # print(name, type(module))
-        print(name, isinstance(module, nn.Linear))
-        # print(model)
+    # print("Printing the model...")
+    # import torch.nn as nn
+    # for name, module in model.named_modules():
+    #     # print(name, type(module))
+    #     print(name, isinstance(module, nn.Linear))
+    #     # print(model)
 
     # Freeze backbone
     if freeze_backbone:
