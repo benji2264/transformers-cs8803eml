@@ -674,7 +674,7 @@ def main():
             
     print(f"\n****************************\n* Quantize model to {n_bits} bits *\n****************************")    
     qmodel = QRobertaForSequenceClassification.from_pretrained(
-        training_args.output_dir, use_safetensors=True,
+        training_args.output_dir, use_safetensors=True, n_bits=n_bits,
     )
 
     # New trainer with quant model (used for eval only)
