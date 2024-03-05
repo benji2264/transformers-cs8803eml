@@ -167,9 +167,9 @@ class QRobertaSelfAttention(nn.Module):
         self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
         self.all_head_size = self.num_attention_heads * self.attention_head_size
 
-        self.query = quantize.QLinear(config.hidden_size, self.all_head_size, num_bits=n_bits, num_grad_bits=n_bits)
-        self.key = quantize.QLinear(config.hidden_size, self.all_head_size, num_bits=n_bits, num_grad_bits=n_bits)
-        self.value = quantize.QLinear(config.hidden_size, self.all_head_size, num_bits=n_bits, num_grad_bits=n_bits)
+        self.query = quantize.QLinear(config.hidden_size, self.all_head_size, num_bits=n_bits, num_grad_bits=0)
+        self.key = quantize.QLinear(config.hidden_size, self.all_head_size, num_bits=n_bits, num_grad_bits=0)
+        self.value = quantize.QLinear(config.hidden_size, self.all_head_size, num_bits=n_bits, num_grad_bits=0)
 
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
         self.position_embedding_type = position_embedding_type or getattr(
@@ -291,7 +291,7 @@ class QRobertaSelfAttention(nn.Module):
 class QRobertaSelfOutput(nn.Module):
     def __init__(self, config, n_bits):
         super().__init__()
-        self.dense = quantize.QLinear(config.hidden_size, config.hidden_size, num_bits=n_bits, num_grad_bits=n_bits)
+        self.dense = quantize.QLinear(config.hidden_size, config.hidden_size, num_bits=n_bits, num_grad_bits=0)
         self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
@@ -356,7 +356,7 @@ class QRobertaAttention(nn.Module):
 class QRobertaIntermediate(nn.Module):
     def __init__(self, config, n_bits):
         super().__init__()
-        self.dense = quantize.QLinear(config.hidden_size, config.intermediate_size, num_bits=n_bits, num_grad_bits=n_bits)
+        self.dense = quantize.QLinear(config.hidden_size, config.intermediate_size, num_bits=n_bits, num_grad_bits=0)
         if isinstance(config.hidden_act, str):
             self.intermediate_act_fn = ACT2FN[config.hidden_act]
         else:
@@ -372,7 +372,7 @@ class QRobertaIntermediate(nn.Module):
 class QRobertaOutput(nn.Module):
     def __init__(self, config, n_bits):
         super().__init__()
-        self.dense = quantize.QLinear(config.intermediate_size, config.hidden_size, num_bits=n_bits, num_grad_bits=n_bits)
+        self.dense = quantize.QLinear(config.intermediate_size, config.hidden_size, num_bits=n_bits, num_grad_bits=0)
         self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
@@ -568,7 +568,7 @@ class QRobertaEncoder(nn.Module):
 class QRobertaPooler(nn.Module):
     def __init__(self, config, n_bits):
         super().__init__()
-        self.dense = quantize.QLinear(config.hidden_size, config.hidden_size, num_bits=n_bits, num_grad_bits=n_bits)
+        self.dense = quantize.QLinear(config.hidden_size, config.hidden_size, num_bits=n_bits, num_grad_bits=0)
         self.activation = nn.Tanh()
 
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
@@ -1429,12 +1429,12 @@ class QRobertaClassificationHead(nn.Module):
 
     def __init__(self, config, n_bits):
         super().__init__()
-        self.dense = quantize.QLinear(config.hidden_size, config.hidden_size, num_bits=n_bits, num_grad_bits=n_bits)
+        self.dense = quantize.QLinear(config.hidden_size, config.hidden_size, num_bits=n_bits, num_grad_bits=0)
         classifier_dropout = (
             config.classifier_dropout if config.classifier_dropout is not None else config.hidden_dropout_prob
         )
         self.dropout = nn.Dropout(classifier_dropout)
-        self.out_proj = quantize.QLinear(config.hidden_size, config.num_labels, num_bits=n_bits, num_grad_bits=n_bits)
+        self.out_proj = quantize.QLinear(config.hidden_size, config.num_labels, num_bits=n_bits, num_grad_bits=0)
 
     def forward(self, features, **kwargs):
         x = features[:, 0, :]  # take <s> token (equiv. to [CLS])

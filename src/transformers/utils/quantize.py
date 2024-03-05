@@ -238,7 +238,9 @@ class QConv2d(nn.Conv2d):
 
         qinput = self.quantize_input(input, num_bits)
         output = F.conv2d(qinput, qweight, qbias, self.stride, self.padding, self.dilation, self.groups)
-        output = quantize_grad(output, num_bits=num_grad_bits, flatten_dims=(1, -1))
+
+        if num_grad_bits:
+            output = quantize_grad(output, num_bits=num_grad_bits, flatten_dims=(1, -1))
 
         return output
         
