@@ -1162,7 +1162,7 @@ class QRobertaForSequenceClassification(QRobertaPreTrainedModel):
         self.config = config
 
         self.roberta = QRobertaModel(config, n_bits, add_pooling_layer=False)
-        self.classifier = QRobertaClassificationHead(config)
+        self.classifier = QRobertaClassificationHead(config, n_bits)
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -1427,14 +1427,14 @@ class QRobertaForTokenClassification(QRobertaPreTrainedModel):
 class QRobertaClassificationHead(nn.Module):
     """Head for sentence-level classification tasks."""
 
-    def __init__(self, config):
+    def __init__(self, config, n_bits):
         super().__init__()
-        self.dense = quantize.QLinear(config.hidden_size, config.hidden_size)
+        self.dense = quantize.QLinear(config.hidden_size, config.hidden_size, num_bits=n_bits, num_grad_bits=n_bits)
         classifier_dropout = (
             config.classifier_dropout if config.classifier_dropout is not None else config.hidden_dropout_prob
         )
         self.dropout = nn.Dropout(classifier_dropout)
-        self.out_proj = quantize.QLinear(config.hidden_size, config.num_labels)
+        self.out_proj = quantize.QLinear(config.hidden_size, config.num_labels, num_bits=n_bits, num_grad_bits=n_bits)
 
     def forward(self, features, **kwargs):
         x = features[:, 0, :]  # take <s> token (equiv. to [CLS])
