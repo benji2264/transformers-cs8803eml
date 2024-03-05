@@ -227,21 +227,30 @@ def main():
     # or by passing the --help flag to this script.
     # We now keep distinct sets of args, for a cleaner separation of concerns.
 
-    # Find "--num_bits" value if exists
-    n_bits = None
+    # Find n_bits value for post_training quantization if exists
+    n_bits = 0
     for i, s in enumerate(sys.argv):
-        if s == "--num_bits":
+        if s == "--post_train_bits":
             # Store the index of the next element
             n_bits = int(sys.argv[i+1])
-            # Remove "--num_bits" and the next element from the list
+            # Remove "--post_train_bits" and the next element from the list
             del sys.argv[i:i+2]
             break
-    
+
     if n_bits:
         print(f"Post training quantization set to {n_bits} bits")
     else:
-        print("No quantization will be applied, please use `--num_bits <value>` to apply post-training quantization")
+        print("No post-training quantization will be applied, please use `--post_train_bits <value>` to apply post-training quantization")
     
+    # Determine if backbone is frozen or not
+    freeze_backbone = False
+    for i, s in enumerate(sys.argv):
+        if s == "--freeze_backbone":
+            freeze_backbone = True
+            del sys.argv[i:i+1]
+
+    print(f"Freeze backbone is {freeze_backbone}...")    
+
     print(sys.argv)
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
@@ -429,12 +438,22 @@ def main():
         ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
     )
 
-    # print("Printing the model...")
-    # import torch.nn as nn
-    # for name, module in model.named_modules():
-    #     # print(name, type(module))
-    #     print(name, isinstance(module, nn.Linear))
-    #     # print(model)
+    
+
+    print("Printing the model...")
+    import torch.nn as nn
+    for name, module in model.named_modules():
+        # print(name, type(module))
+        print(name, isinstance(module, nn.Linear))
+        # print(model)
+
+    # Freeze backbone
+    if freeze_backbone:
+        print("Freezing the backbone...")
+        for name, param in model.named_parameters():
+            if name.startswith('roberta'):
+                param.requires_grad = False
+
 
     # for name, param in model.named_parameters():
     #     # print(name, type(module))
